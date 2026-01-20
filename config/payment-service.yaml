@@ -1,107 +1,59 @@
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: payment-service-config
-  namespace: default
-data:
-  # Database configuration optimizations
-  database:
-    connection_pool:
-      max_connections: 50
-      min_connections: 10
-      connection_timeout: 30s
-      idle_timeout: 300s
-      max_lifetime: 1800s
-    query_timeout: 15s
-    retry_attempts: 3
-    retry_delay: 1s
-  
-  # Payment provider configuration
-  payment_providers:
-    timeout: 20s
-    circuit_breaker:
-      failure_threshold: 5
-      recovery_timeout: 30s
-      half_open_max_calls: 3
-    retry_policy:
-      max_attempts: 3
-      backoff_multiplier: 2
-      initial_delay: 500ms
-      max_delay: 5s
-  
-  # Performance and resource settings
-  performance:
-    request_timeout: 25s
-    max_concurrent_requests: 100
-    rate_limit:
-      requests_per_second: 1000
-      burst_capacity: 200
-  
-  # Logging and monitoring
-  logging:
-    level: INFO
-    structured: true
-    include_request_id: true
-  
-  monitoring:
-    metrics_enabled: true
-    health_check_interval: 30s
-    slow_query_threshold: 1s
-  
-  # Error handling
-  error_handling:
-    detailed_errors: false
-    fallback_enabled: true
-    graceful_degradation: true
----
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: payment-service
-  namespace: default
-spec:
-  replicas: 3
-  selector:
-    matchLabels:
-      app: payment-service
-  template:
-    metadata:
-      labels:
-        app: payment-service
-    spec:
-      containers:
-      - name: payment-service
-        image: payment-service:latest
-        ports:
-        - containerPort: 8080
-        env:
-        - name: CONFIG_PATH
-          value: "/config/payment-service.yaml"
-        resources:
-          requests:
-            memory: "256Mi"
-            cpu: "250m"
-          limits:
-            memory: "512Mi"
-            cpu: "500m"
-        livenessProbe:
-          httpGet:
-            path: /health
-            port: 8080
-          initialDelaySeconds: 30
-          periodSeconds: 10
-          timeoutSeconds: 5
-        readinessProbe:
-          httpGet:
-            path: /ready
-            port: 8080
-          initialDelaySeconds: 10
-          periodSeconds: 5
-          timeoutSeconds: 3
-        volumeMounts:
-        - name: config-volume
-          mountPath: /config
-      volumes:
-      - name: config-volume
-        configMap:
-          name: payment-service-config
+# Bear GitOps Payment Service Configuration
+# 
+# This file controls the behavior of the payment service.
+# The connection_pool_size directly affects latency:
+#   - < 10: Severe latency (2-5 seconds) - simulates pool exhaustion
+#   - 10-24: Moderate latency (0.5-1.5 seconds) - degraded performance
+#   - >= 25: Normal operation (10-50ms) - healthy
+
+# Database configuration - FIXED by AutoSRE
+database:
+  connection_pool_size: 50  # Increased from 20 to fix latency issues
+  max_connections: 50
+  min_connections: 10
+  connection_timeout_ms: 30000
+  idle_timeout_ms: 300000
+  max_lifetime_ms: 1800000
+  query_timeout_ms: 15000
+  retry_attempts: 3
+  retry_delay_ms: 1000
+
+# Service configuration
+service:
+  timeout_ms: 25000
+  version: "1.0.1"
+  max_concurrent_requests: 100
+
+# Payment provider configuration
+payment_provider:
+  timeout_ms: 20000
+  retry_attempts: 3
+  retry_delay_ms: 2000
+  circuit_breaker:
+    failure_threshold: 5
+    recovery_timeout_ms: 30000
+    half_open_max_calls: 3
+
+# Monitoring and logging
+monitoring:
+  metrics_enabled: true
+  tracing_enabled: true
+  log_level: "INFO"
+  slow_query_threshold_ms: 1000
+  performance_monitoring:
+    enabled: true
+    alert_threshold_ms: 2000
+
+# Cache configuration
+cache:
+  enabled: true
+  ttl_seconds: 300
+  max_size: 10000
+  eviction_policy: "LRU"
+
+# Error handling
+error_handling:
+  timeout_message: "Payment processing timeout - please try again"
+  generic_error_message: "Payment processing temporarily unavailable"
+  detailed_logging: true
+  alert_on_errors: true
