@@ -1,37 +1,107 @@
-# Payment Service Configuration
-# WARNING: Some settings may cause performance issues!
-
-service:
-  name: payment-service
-  version: "1.0.0"
-  timeout_ms: 100
-  max_retries: 3
-  log_level: INFO
-
-database:
-  # ISSUE: Pool size is too small for production traffic!
-  # This causes connection contention and high latency.
-  # Recommended value: 50 for production workloads
-  connection_pool_size: 2  # <-- TOO LOW! Should be 50
-  query_timeout_ms: 50
-  host: localhost
-  port: 5432
-  name: payments
-
-cache:
-  enabled: true
-  ttl_seconds: 300
-  max_size_mb: 512
-
-features:
-  rate_limiting: true
-  rate_limit_requests_per_second: 1000
-  circuit_breaker: true
-  circuit_breaker_threshold: 5
-  tracing_enabled: true
-  tracing_sample_rate: 1.0
-
-monitoring:
-  metrics_enabled: true
-  metrics_port: 9090
-  health_check_interval_seconds: 10
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: payment-service-config
+  namespace: default
+data:
+  application.yaml: |
+    server:
+      port: 8080
+      tomcat:
+        max-threads: 200
+        min-spare-threads: 10
+        connection-timeout: 20000
+        max-connections: 8192
+    
+    spring:
+      datasource:
+        hikari:
+          maximum-pool-size: 20
+          minimum-idle: 5
+          connection-timeout: 30000
+          idle-timeout: 600000
+          max-lifetime: 1800000
+          leak-detection-threshold: 60000
+        url: jdbc:postgresql://postgres:5432/payments
+        username: ${DB_USERNAME}
+        password: ${DB_PASSWORD}
+      
+      jpa:
+        hibernate:
+          ddl-auto: validate
+        properties:
+          hibernate:
+            jdbc:
+              batch_size: 25
+              fetch_size: 50
+            cache:
+              use_second_level_cache: true
+              region:
+                factory_class: org.hibernate.cache.jcache.JCacheRegionFactory
+    
+    payment:
+      providers:
+        stripe:
+          timeout: 15000
+          retry-attempts: 3
+          retry-delay: 1000
+          connection-pool-size: 10
+        paypal:
+          timeout: 15000
+          retry-attempts: 3
+          retry-delay: 1000
+          connection-pool-size: 10
+      
+      processing:
+        async: true
+        thread-pool-size: 20
+        queue-capacity: 100
+        timeout: 30000
+      
+      circuit-breaker:
+        enabled: true
+        failure-threshold: 5
+        timeout: 10000
+        recovery-timeout: 30000
+    
+    logging:
+      level:
+        com.bear.payment: INFO
+        org.hibernate.SQL: WARN
+        org.springframework.web: WARN
+      pattern:
+        console: '%d{yyyy-MM-dd HH:mm:ss} - %msg%n'
+    
+    management:
+      endpoints:
+        web:
+          exposure:
+            include: health,metrics,prometheus
+      metrics:
+        export:
+          prometheus:
+            enabled: true
+      endpoint:
+        health:
+          show-details: always
+    
+    resilience4j:
+      circuitbreaker:
+        instances:
+          payment-provider:
+            failure-rate-threshold: 50
+            wait-duration-in-open-state: 30s
+            sliding-window-size: 10
+            minimum-number-of-calls: 5
+      
+      retry:
+        instances:
+          payment-retry:
+            max-attempts: 3
+            wait-duration: 1s
+            exponential-backoff-multiplier: 2
+      
+      timelimiter:
+        instances:
+          payment-timeout:
+            timeout-duration: 25s
