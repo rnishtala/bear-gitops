@@ -8,7 +8,7 @@
 
 # Database configuration
 database:
-  connection_pool_size: 50  # Fixed - increased from 5 to 50 for normal operation
+  connection_pool_size: 5  # Too small - causes latency issues
   max_connections: 50
   min_connections: 10
   connection_timeout_ms: 30000
@@ -21,7 +21,7 @@ database:
 # Service configuration
 service:
   timeout_ms: 25000
-  version: "1.0.5"
+  version: "1.0.6"
   max_concurrent_requests: 100
 
 # Payment provider configuration
