@@ -38,7 +38,6 @@ jobs:
           config = yaml.safe_load(open('config/payment-service.yaml'))
           pool_size = config.get('database', {}).get('connection_pool_size', 0)
           print(f'Connection pool size: {pool_size}')
-          # Warning but don't fail - this is for demo purposes
           if pool_size < 25:
               print('⚠️  WARNING: Pool size is below recommended value of 25')
           else:
@@ -87,39 +86,67 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       
-      - name: Deploy notification
+      - name: Setup SSH
         run: |
-          echo "🚀 Deploying payment-service..."
-          echo "   Image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest"
-          echo "   Config: config/payment-service.yaml"
-          
-          # Read and display current config
-          python3 -c "
-          import yaml
-          config = yaml.safe_load(open('config/payment-service.yaml'))
-          print('📋 Deployment Config:')
-          print(f'   - Pool size: {config.get(\"database\", {}).get(\"connection_pool_size\")}')
-          print(f'   - Timeout: {config.get(\"service\", {}).get(\"timeout_ms\")}ms')
-          "
+          mkdir -p ~/.ssh
+          echo "${{ secrets.MVP_SSH_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H ${{ secrets.MVP_HOST }} >> ~/.ssh/known_hosts 2>/dev/null || true
       
-      # In a real setup, this would trigger ArgoCD sync or kubectl apply
-      - name: Trigger deployment
+      - name: Deploy to EC2
+        env:
+          MVP_HOST: ${{ secrets.MVP_HOST }}
+          MVP_USER: ubuntu
         run: |
-          echo "✅ Deployment triggered!"
-          echo ""
-          echo "In production, this would:"
-          echo "  1. Update ArgoCD Application"
-          echo "  2. Sync Kubernetes manifests"  
-          echo "  3. Roll out new pods"
-          echo ""
-          echo "For demo purposes, restart the service manually:"
-          echo "  make mvp-rebuild"
+          echo "🚀 Deploying payment-service to $MVP_HOST..."
+          
+          # Copy updated config to EC2
+          scp -o StrictHostKeyChecking=no \
+            config/payment-service.yaml \
+            ${MVP_USER}@${MVP_HOST}:/home/ubuntu/bear-gitops-config.yaml
+          
+          # Deploy on EC2
+          ssh -o StrictHostKeyChecking=no ${MVP_USER}@${MVP_HOST} << 'ENDSSH'
+            set -e
+            echo "📦 Updating bear-payment service..."
+            
+            # Copy config into running container
+            docker cp /home/ubuntu/bear-gitops-config.yaml bear-payment:/app/config/payment-service.yaml 2>/dev/null || true
+            
+            # Restart the container to pick up new config
+            docker restart bear-payment
+            
+            # Wait for container to be healthy
+            echo "⏳ Waiting for service to be ready..."
+            sleep 5
+            
+            # Health check
+            if curl -s http://localhost:8002/health | grep -q "status"; then
+              echo "✅ bear-payment is healthy!"
+              curl -s http://localhost:8002/health | python3 -m json.tool
+            else
+              echo "❌ Health check failed"
+              docker logs bear-payment --tail 20
+              exit 1
+            fi
+          ENDSSH
+          
+          echo "✅ Deployment complete!"
 
       - name: Notify AutoSRE
-        if: success()
+        if: always()
+        env:
+          AUTOSRE_URL: ${{ secrets.AUTOSRE_WEBHOOK_URL }}
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_URL }}
         run: |
-          # Notify AutoSRE of successful deployment
-          echo "📡 Notifying AutoSRE of deployment..."
-          # curl -X POST ${{ secrets.AUTOSRE_WEBHOOK_URL }} \
-          #   -H "Content-Type: application/json" \
-          #   -d '{"event": "deployment", "service": "payment-service", "status": "success"}'
+          STATUS="${{ job.status }}"
+          COMMIT_SHA="${{ github.sha }}"
+          
+          echo "📡 Notifying of deployment status: $STATUS"
+          
+          # Notify AutoSRE if webhook configured
+          if [ -n "$AUTOSRE_URL" ]; then
+            curl -s -X POST "$AUTOSRE_URL/webhooks/deployment" \
+              -H "Content-Type: application/json" \
+              -d "{\"event\": \"deployment\", \"service\": \"bear-payment\", \"status\": \"$STATUS\"}" || true
+          fi
