@@ -4,87 +4,67 @@ metadata:
   name: payment-service-config
   namespace: default
 data:
-  # Database configuration optimizations
-  DB_CONNECTION_POOL_SIZE: "20"
-  DB_CONNECTION_POOL_MAX_SIZE: "50"
-  DB_CONNECTION_TIMEOUT: "5000"
-  DB_QUERY_TIMEOUT: "10000"
-  DB_IDLE_TIMEOUT: "300000"
+  # Database configuration
+  database:
+    connection_pool:
+      max_connections: 20
+      min_connections: 5
+      connection_timeout: 10s
+      idle_timeout: 300s
+      max_lifetime: 3600s
+    query_timeout: 30s
+    retry_attempts: 3
+    retry_delay: 1s
   
-  # Payment provider timeout configurations
-  PAYMENT_PROVIDER_TIMEOUT: "15000"
-  PAYMENT_PROVIDER_CONNECT_TIMEOUT: "5000"
-  PAYMENT_PROVIDER_READ_TIMEOUT: "10000"
-  PAYMENT_PROVIDER_RETRY_COUNT: "3"
-  PAYMENT_PROVIDER_RETRY_DELAY: "1000"
+  # Payment provider configuration
+  payment_provider:
+    timeout: 30s
+    retry_attempts: 3
+    retry_delay: 2s
+    circuit_breaker:
+      failure_threshold: 5
+      recovery_timeout: 60s
+      half_open_max_calls: 3
+    rate_limit:
+      requests_per_second: 100
+      burst_size: 20
   
-  # Circuit breaker settings
-  CIRCUIT_BREAKER_ENABLED: "true"
-  CIRCUIT_BREAKER_FAILURE_THRESHOLD: "5"
-  CIRCUIT_BREAKER_TIMEOUT: "60000"
-  CIRCUIT_BREAKER_RETRY_TIMEOUT: "30000"
+  # Service performance settings
+  service:
+    request_timeout: 45s
+    max_concurrent_requests: 50
+    graceful_shutdown_timeout: 30s
+    health_check_interval: 10s
   
-  # Resource and performance settings
-  THREAD_POOL_SIZE: "10"
-  MAX_CONCURRENT_REQUESTS: "100"
-  REQUEST_TIMEOUT: "30000"
+  # Resource limits
+  resources:
+    requests:
+      cpu: 500m
+      memory: 512Mi
+    limits:
+      cpu: 1000m
+      memory: 1Gi
   
   # Monitoring and logging
-  LOG_LEVEL: "INFO"
-  METRICS_ENABLED: "true"
-  HEALTH_CHECK_INTERVAL: "30"
+  monitoring:
+    metrics_enabled: true
+    tracing_enabled: true
+    log_level: "INFO"
+    slow_query_threshold: 1s
+    performance_monitoring:
+      enabled: true
+      alert_threshold: 2s
   
   # Cache configuration
-  CACHE_ENABLED: "true"
-  CACHE_TTL: "300"
-  CACHE_MAX_SIZE: "1000"
+  cache:
+    enabled: true
+    ttl: 300s
+    max_size: 10000
+    eviction_policy: "LRU"
   
   # Error handling
-  ERROR_RETRY_ENABLED: "true"
-  ERROR_RETRY_MAX_ATTEMPTS: "3"
-  ERROR_RETRY_BACKOFF_MS: "1000"
----
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: payment-service
-  namespace: default
-spec:
-  replicas: 3
-  selector:
-    matchLabels:
-      app: payment-service
-  template:
-    metadata:
-      labels:
-        app: payment-service
-    spec:
-      containers:
-      - name: payment-service
-        image: payment-service:latest
-        resources:
-          requests:
-            memory: "512Mi"
-            cpu: "250m"
-          limits:
-            memory: "1Gi"
-            cpu: "500m"
-        envFrom:
-        - configMapRef:
-            name: payment-service-config
-        livenessProbe:
-          httpGet:
-            path: /health
-            port: 8080
-          initialDelaySeconds: 30
-          periodSeconds: 10
-          timeoutSeconds: 5
-          failureThreshold: 3
-        readinessProbe:
-          httpGet:
-            path: /ready
-            port: 8080
-          initialDelaySeconds: 10
-          periodSeconds: 5
-          timeoutSeconds: 3
-          failureThreshold: 3
+  error_handling:
+    timeout_message: "Payment processing timeout - please try again"
+    generic_error_message: "Payment processing temporarily unavailable"
+    detailed_logging: true
+    alert_on_errors: true
