@@ -1,59 +1,73 @@
-# Bear GitOps Payment Service Configuration
-# 
-# This file controls the behavior of the payment service.
-# The connection_pool_size directly affects latency:
-#   - < 10: Severe latency (2-5 seconds) - simulates pool exhaustion
-#   - 10-24: Moderate latency (0.5-1.5 seconds) - degraded performance
-#   - >= 25: Normal operation (10-50ms) - healthy
-
-# Database configuration - WARNING: Pool size too low!
-database:
-  connection_pool_size: 5  # Too low - will cause latency issues
-  max_connections: 50
-  min_connections: 10
-  connection_timeout_ms: 30000
-  idle_timeout_ms: 300000
-  max_lifetime_ms: 1800000
-  query_timeout_ms: 15000
-  retry_attempts: 3
-  retry_delay_ms: 1000
-
-# Service configuration
-service:
-  timeout_ms: 25000
-  version: "1.0.2"
-  max_concurrent_requests: 100
-
-# Payment provider configuration
-payment_provider:
-  timeout_ms: 20000
-  retry_attempts: 3
-  retry_delay_ms: 2000
-  circuit_breaker:
-    failure_threshold: 5
-    recovery_timeout_ms: 30000
-    half_open_max_calls: 3
-
-# Monitoring and logging
-monitoring:
-  metrics_enabled: true
-  tracing_enabled: true
-  log_level: "INFO"
-  slow_query_threshold_ms: 1000
-  performance_monitoring:
-    enabled: true
-    alert_threshold_ms: 2000
-
-# Cache configuration
-cache:
-  enabled: true
-  ttl_seconds: 300
-  max_size: 10000
-  eviction_policy: "LRU"
-
-# Error handling
-error_handling:
-  timeout_message: "Payment processing timeout - please try again"
-  generic_error_message: "Payment processing temporarily unavailable"
-  detailed_logging: true
-  alert_on_errors: true
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: payment-service-config
+  namespace: default
+data:
+  application.yaml: |
+    server:
+      port: 8080
+      tomcat:
+        max-threads: 200
+        min-spare-threads: 10
+        connection-timeout: 20000
+        keep-alive-timeout: 20000
+    
+    spring:
+      datasource:
+        hikari:
+          maximum-pool-size: 20
+          minimum-idle: 5
+          connection-timeout: 10000
+          idle-timeout: 300000
+          max-lifetime: 600000
+          leak-detection-threshold: 60000
+      
+      redis:
+        timeout: 2000ms
+        lettuce:
+          pool:
+            max-active: 16
+            max-idle: 8
+            min-idle: 2
+            max-wait: 1000ms
+    
+    payment:
+      processor:
+        timeout: 5000
+        retry:
+          max-attempts: 3
+          delay: 1000
+        circuit-breaker:
+          failure-threshold: 5
+          timeout: 10000
+          reset-timeout: 30000
+      
+      external-apis:
+        bank-gateway:
+          url: https://api.bank-gateway.com
+          timeout: 8000
+          max-connections: 50
+          connection-pool-timeout: 5000
+        
+        fraud-detection:
+          url: https://api.fraud-detection.com
+          timeout: 3000
+          max-connections: 20
+          connection-pool-timeout: 2000
+    
+    logging:
+      level:
+        com.payment: INFO
+        org.springframework: WARN
+        root: INFO
+    
+    management:
+      endpoints:
+        web:
+          exposure:
+            include: health,metrics,prometheus
+      metrics:
+        export:
+          prometheus:
+            enabled: true
