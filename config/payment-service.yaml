@@ -1,37 +1,70 @@
-# Payment Service Configuration
-# WARNING: Some settings may cause performance issues!
-
-service:
-  name: payment-service
-  version: "1.0.0"
-  timeout_ms: 100
-  max_retries: 3
-  log_level: INFO
-
-database:
-  # ISSUE: Pool size is too small for production traffic!
-  # This causes connection contention and high latency.
-  # Recommended value: 50 for production workloads
-  connection_pool_size: 2  # <-- TOO LOW! Should be 50
-  query_timeout_ms: 50
-  host: localhost
-  port: 5432
-  name: payments
-
-cache:
-  enabled: true
-  ttl_seconds: 300
-  max_size_mb: 512
-
-features:
-  rate_limiting: true
-  rate_limit_requests_per_second: 1000
-  circuit_breaker: true
-  circuit_breaker_threshold: 5
-  tracing_enabled: true
-  tracing_sample_rate: 1.0
-
-monitoring:
-  metrics_enabled: true
-  metrics_port: 9090
-  health_check_interval_seconds: 10
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: payment-service-config
+  namespace: default
+data:
+  # Database configuration
+  database:
+    connection_pool:
+      max_connections: 20
+      min_connections: 5
+      connection_timeout: 10s
+      idle_timeout: 300s
+      max_lifetime: 3600s
+    query_timeout: 30s
+    retry_attempts: 3
+    retry_delay: 1s
+  
+  # Payment provider configuration
+  payment_provider:
+    timeout: 30s
+    retry_attempts: 3
+    retry_delay: 2s
+    circuit_breaker:
+      failure_threshold: 5
+      recovery_timeout: 60s
+      half_open_max_calls: 3
+    rate_limit:
+      requests_per_second: 100
+      burst_size: 20
+  
+  # Service performance settings
+  service:
+    request_timeout: 45s
+    max_concurrent_requests: 50
+    graceful_shutdown_timeout: 30s
+    health_check_interval: 10s
+  
+  # Resource limits
+  resources:
+    requests:
+      cpu: 500m
+      memory: 512Mi
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+  
+  # Monitoring and logging
+  monitoring:
+    metrics_enabled: true
+    tracing_enabled: true
+    log_level: "INFO"
+    slow_query_threshold: 1s
+    performance_monitoring:
+      enabled: true
+      alert_threshold: 2s
+  
+  # Cache configuration
+  cache:
+    enabled: true
+    ttl: 300s
+    max_size: 10000
+    eviction_policy: "LRU"
+  
+  # Error handling
+  error_handling:
+    timeout_message: "Payment processing timeout - please try again"
+    generic_error_message: "Payment processing temporarily unavailable"
+    detailed_logging: true
+    alert_on_errors: true
