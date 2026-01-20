@@ -4,90 +4,61 @@ metadata:
   name: payment-service-config
   namespace: default
 data:
-  application.yaml: |
-    server:
-      port: 8080
-      tomcat:
-        max-threads: 200
-        min-spare-threads: 10
-        connection-timeout: 20000
-        keep-alive-timeout: 30000
+  # Database connection settings - optimized for low latency
+  database:
+    host: "payment-db.default.svc.cluster.local"
+    port: "5432"
+    name: "payments"
+    max_connections: "50"
+    connection_timeout: "5s"
+    idle_timeout: "300s"
+    max_lifetime: "1800s"
     
-    spring:
-      datasource:
-        hikari:
-          maximum-pool-size: 20
-          minimum-idle: 5
-          connection-timeout: 10000
-          idle-timeout: 300000
-          max-lifetime: 1200000
-          leak-detection-threshold: 60000
-      
-      jpa:
-        hibernate:
-          ddl-auto: validate
-        properties:
-          hibernate:
-            jdbc:
-              batch_size: 20
-              fetch_size: 100
-            query:
-              plan_cache_max_size: 2048
+  # Connection pool settings for better performance
+  connection_pool:
+    initial_size: "10"
+    max_size: "30"
+    min_idle: "5"
+    acquire_timeout: "3s"
+    validation_timeout: "1s"
     
-    payment:
-      service:
-        timeout:
-          connect: 5000
-          read: 15000
-          write: 10000
-        retry:
-          max-attempts: 3
-          backoff-delay: 1000
-        circuit-breaker:
-          failure-rate-threshold: 50
-          wait-duration-in-open-state: 30000
-          sliding-window-size: 100
-        
-        external-apis:
-          payment-gateway:
-            url: "https://api.paymentgateway.com"
-            timeout: 10000
-            pool-size: 50
-          
-          fraud-detection:
-            url: "https://api.frauddetection.com"
-            timeout: 8000
-            pool-size: 30
+  # HTTP client timeouts - reduced for lower latency
+  http_client:
+    connect_timeout: "2s"
+    read_timeout: "10s"
+    write_timeout: "5s"
+    idle_timeout: "60s"
+    max_idle_connections: "100"
+    max_connections_per_host: "10"
     
-    logging:
-      level:
-        com.bear.payment: INFO
-        org.hibernate.SQL: WARN
-        org.springframework.web: WARN
+  # Circuit breaker configuration
+  circuit_breaker:
+    failure_threshold: "5"
+    recovery_timeout: "30s"
+    success_threshold: "3"
+    timeout: "5s"
     
-    management:
-      endpoints:
-        web:
-          exposure:
-            include: health,metrics,prometheus
-      metrics:
-        export:
-          prometheus:
-            enabled: true
-        distribution:
-          percentiles:
-            http.server.requests: 0.5, 0.95, 0.99
-          percentiles-histogram:
-            http.server.requests: true
+  # Caching configuration for improved response times
+  cache:
+    enabled: "true"
+    ttl: "300s"
+    max_size: "1000"
+    type: "redis"
+    redis_url: "redis://redis.default.svc.cluster.local:6379"
     
-    cache:
-      redis:
-        host: redis-service
-        port: 6379
-        timeout: 2000
-        jedis:
-          pool:
-            max-active: 20
-            max-idle: 10
-            min-idle: 2
-            max-wait: 2000
+  # Logging and monitoring
+  logging:
+    level: "info"
+    format: "json"
+    
+  # Performance tuning
+  performance:
+    worker_threads: "8"
+    max_request_size: "1MB"
+    request_queue_size: "1000"
+    enable_compression: "true"
+    
+  # Health check configuration
+  health:
+    check_interval: "10s"
+    timeout: "2s"
