@@ -146,7 +146,7 @@ jobs:
           
           # Notify AutoSRE if webhook configured
           if [ -n "$AUTOSRE_URL" ]; then
-            curl -s -X POST "$AUTOSRE_URL/webhooks/deployment" \
+            curl -s -X POST "$AUTOSRE_URL/api/v1/webhooks/deployment" \
               -H "Content-Type: application/json" \
               -d "{\"event\": \"deployment\", \"service\": \"bear-payment\", \"status\": \"$STATUS\"}" || true
           fi
