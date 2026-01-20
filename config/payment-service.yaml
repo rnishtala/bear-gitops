@@ -8,7 +8,7 @@
 
 # Database configuration
 database:
-  connection_pool_size: 50  # Fixed - increased from 5 to prevent latency issues
+  connection_pool_size: 50  # Fixed - increased from 5 to resolve latency issues
   max_connections: 50
   min_connections: 10
   connection_timeout_ms: 30000
