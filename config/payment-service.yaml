@@ -6,9 +6,9 @@
 #   - 10-24: Moderate latency (0.5-1.5 seconds) - degraded performance
 #   - >= 25: Normal operation (10-50ms) - healthy
 
-# Database configuration - FIXED by AutoSRE
+# Database configuration - WARNING: Pool size too low!
 database:
-  connection_pool_size: 50  # Increased from 20 to fix latency issues
+  connection_pool_size: 5  # Too low - will cause latency issues
   max_connections: 50
   min_connections: 10
   connection_timeout_ms: 30000
@@ -21,7 +21,7 @@ database:
 # Service configuration
 service:
   timeout_ms: 25000
-  version: "1.0.1"
+  version: "1.0.2"
   max_concurrent_requests: 100
 
 # Payment provider configuration
