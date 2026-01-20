@@ -14,7 +14,7 @@ database:
   connection_timeout_ms: 5000  # Reduced from 30000 for faster failure detection
   idle_timeout_ms: 300000
   max_lifetime_ms: 1800000
-  query_timeout_ms: 8000  # Reduced from 15000 to prevent long-running queries
+  query_timeout_ms: 8000  # Reduced from 15000 but sufficient for payment queries
   retry_attempts: 3
   retry_delay_ms: 1000
 
