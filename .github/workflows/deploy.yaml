@@ -1,0 +1,125 @@
+name: Build and Deploy
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+          pip install pytest httpx
+      
+      - name: Validate config
+        run: |
+          python -c "import yaml; yaml.safe_load(open('config/payment-service.yaml'))"
+          echo "✅ Config is valid YAML"
+      
+      - name: Run tests
+        run: |
+          python -c "
+          import yaml
+          config = yaml.safe_load(open('config/payment-service.yaml'))
+          pool_size = config.get('database', {}).get('connection_pool_size', 0)
+          print(f'Connection pool size: {pool_size}')
+          # Warning but don't fail - this is for demo purposes
+          if pool_size < 25:
+              print('⚠️  WARNING: Pool size is below recommended value of 25')
+          else:
+              print('✅ Pool size looks good')
+          "
+
+  build:
+    needs: test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Log in to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=sha,prefix=
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
+      
+      - name: Build and push
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: ${{ github.event_name == 'push' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Deploy notification
+        run: |
+          echo "🚀 Deploying payment-service..."
+          echo "   Image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest"
+          echo "   Config: config/payment-service.yaml"
+          
+          # Read and display current config
+          python3 -c "
+          import yaml
+          config = yaml.safe_load(open('config/payment-service.yaml'))
+          print('📋 Deployment Config:')
+          print(f'   - Pool size: {config.get(\"database\", {}).get(\"connection_pool_size\")}')
+          print(f'   - Timeout: {config.get(\"service\", {}).get(\"timeout_ms\")}ms')
+          "
+      
+      # In a real setup, this would trigger ArgoCD sync or kubectl apply
+      - name: Trigger deployment
+        run: |
+          echo "✅ Deployment triggered!"
+          echo ""
+          echo "In production, this would:"
+          echo "  1. Update ArgoCD Application"
+          echo "  2. Sync Kubernetes manifests"  
+          echo "  3. Roll out new pods"
+          echo ""
+          echo "For demo purposes, restart the service manually:"
+          echo "  make mvp-rebuild"
+
+      - name: Notify AutoSRE
+        if: success()
+        run: |
+          # Notify AutoSRE of successful deployment
+          echo "📡 Notifying AutoSRE of deployment..."
+          # curl -X POST ${{ secrets.AUTOSRE_WEBHOOK_URL }} \
+          #   -H "Content-Type: application/json" \
+          #   -d '{"event": "deployment", "service": "payment-service", "status": "success"}'
