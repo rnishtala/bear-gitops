@@ -121,9 +121,9 @@ jobs:
             sleep 5
             
             # Health check
-            if curl -s http://localhost:8002/health | grep -q "status"; then
+            if curl -s http://localhost:8080/health | grep -q "status"; then
               echo "✅ bear-payment is healthy!"
-              curl -s http://localhost:8002/health | python3 -m json.tool
+              curl -s http://localhost:8080/health | python3 -m json.tool
             else
               echo "❌ Health check failed"
               docker logs bear-payment --tail 20
