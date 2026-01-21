@@ -27,9 +27,9 @@ service:
 # Payment provider configuration
 payment_provider:
   timeout_ms: 30000  # Increased from 20000 to prevent premature failures
-  connection_timeout_ms: 10000  # Added explicit connection timeout
   retry_attempts: 3
   retry_delay_ms: 2000
+  connection_timeout_ms: 10000  # Added connection timeout for gateway
   circuit_breaker:
     failure_threshold: 5
     recovery_timeout_ms: 30000
