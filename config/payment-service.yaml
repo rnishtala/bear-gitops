@@ -24,14 +24,6 @@ service:
   version: "1.0.9"
   max_concurrent_requests: 100
 
-# HTTP client configuration
-http:
-  client:
-    read_timeout_ms: 30000
-    connection_timeout_ms: 10000
-    max_connections_per_route: 50
-    max_total_connections: 200
-
 # Payment provider configuration
 payment_provider:
   timeout_ms: 45000  # Increased from 30000 to prevent premature failures during high latency
@@ -42,6 +34,14 @@ payment_provider:
     failure_threshold: 5
     recovery_timeout_ms: 30000
     half_open_max_calls: 3
+
+# HTTP client configuration
+http:
+  client:
+    read_timeout_ms: 30000
+    connection_timeout_ms: 10000
+    max_connections_per_route: 50
+    max_total_connections: 200
 
 # Monitoring and logging
 monitoring:
