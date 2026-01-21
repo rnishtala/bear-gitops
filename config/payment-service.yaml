@@ -8,20 +8,20 @@
 
 # Database configuration
 database:
-  connection_pool_size: 20  # Increased from 5 to handle concurrent requests
-  max_connections: 20  # Aligned with connection pool size
+  connection_pool_size: 5  # LOW - triggers latency issues for demo
+  max_connections: 50
   min_connections: 10
-  connection_timeout_ms: 10000  # Set to 10s as recommended
+  connection_timeout_ms: 30000
   idle_timeout_ms: 300000
   max_lifetime_ms: 1800000
-  query_timeout_ms: 30000  # Increased from 15s to 30s
+  query_timeout_ms: 15000
   retry_attempts: 3
   retry_delay_ms: 1000
 
 # Service configuration
 service:
   timeout_ms: 25000
-  version: "1.0.8"
+  version: "1.0.9"
   max_concurrent_requests: 100
 
 # Payment provider configuration
