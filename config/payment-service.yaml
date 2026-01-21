@@ -35,6 +35,21 @@ payment_provider:
     recovery_timeout_ms: 30000
     half_open_max_calls: 3
 
+# Fraud detection service configuration
+fraud_detection:
+  timeout_ms: 3000  # Reduce from default to fail fast
+  circuit_breaker:
+    failure_threshold: 5
+    timeout: 30000  # 30 seconds
+    reset_timeout: 60000  # 1 minute
+  retry:
+    max_attempts: 2
+    backoff_multiplier: 2
+    initial_delay_ms: 100
+  fallback:
+    enabled: true
+    default_action: "allow"  # or "deny" based on business requirements
+
 # HTTP client configuration
 http:
   client:
