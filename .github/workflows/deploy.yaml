@@ -214,10 +214,32 @@ jobs:
               echo "Found incident ID: $INCIDENT_ID"
               
               if [ -n "$AUTOSRE_URL" ]; then
-                echo "✅ Resolving incident in AutoSRE..."
-                RESOLUTION="Fixed+by+GitOps+PR+%23${PR_NUMBER}+(commit+${{ github.sha }})"
-                curl -s -X POST "${AUTOSRE_URL}/api/v1/incidents/${INCIDENT_ID}/resolve?resolution_summary=${RESOLUTION}&resolved_by=GitOps+CI/CD" \
-                  -H "Content-Type: application/json" || echo "Warning: Could not resolve incident"
+                # First verify the fix before resolving
+                echo "🔍 Verifying that the original issue is fixed..."
+                VERIFY_RESPONSE=$(curl -s -X POST "${AUTOSRE_URL}/api/v1/incidents/${INCIDENT_ID}/verify" \
+                  -H "Content-Type: application/json" 2>/dev/null || echo '{"issue_persists": true}')
+                
+                echo "Verification response: $VERIFY_RESPONSE"
+                
+                ISSUE_PERSISTS=$(echo "$VERIFY_RESPONSE" | jq -r '.issue_persists // true')
+                VERIFY_SUMMARY=$(echo "$VERIFY_RESPONSE" | jq -r '.verification_summary // "Unknown"')
+                
+                if [ "$ISSUE_PERSISTS" == "false" ]; then
+                  echo "✅ Issue verified as fixed: $VERIFY_SUMMARY"
+                  echo "✅ Resolving incident in AutoSRE..."
+                  RESOLUTION="Fixed+by+GitOps+PR+%23${PR_NUMBER}+(commit+${{ github.sha }})+|+Verified:+${VERIFY_SUMMARY// /+}"
+                  curl -s -X POST "${AUTOSRE_URL}/api/v1/incidents/${INCIDENT_ID}/resolve?resolution_summary=${RESOLUTION}&resolved_by=GitOps+CI/CD" \
+                    -H "Content-Type: application/json" || echo "Warning: Could not resolve incident"
+                else
+                  echo "⚠️ Issue still persists: $VERIFY_SUMMARY"
+                  echo "⚠️ NOT resolving incident - fix verification failed"
+                  # Post a warning to Slack via webhook
+                  if [ -n "${{ secrets.SLACK_WEBHOOK_URL }}" ]; then
+                    curl -s -X POST "${{ secrets.SLACK_WEBHOOK_URL }}" \
+                      -H "Content-Type: application/json" \
+                      -d "{\"text\": \"⚠️ *Deployment completed but issue persists*\n\n*Incident:* \`${INCIDENT_ID}\`\n*Verification:* ${VERIFY_SUMMARY}\n\n_The incident was NOT resolved. Please investigate._\"}" || true
+                  fi
+                fi
               else
                 echo "⚠️ AUTOSRE_URL not configured"
               fi
