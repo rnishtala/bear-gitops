@@ -79,6 +79,10 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
 
   deploy:
+    permissions:
+      contents: read
+      issues: write
+      pull-requests: read
     needs: build
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
@@ -149,4 +153,45 @@ jobs:
             curl -s -X POST "$AUTOSRE_URL/api/v1/webhooks/deployment" \
               -H "Content-Type: application/json" \
               -d "{\"event\": \"deployment\", \"service\": \"bear-payment\", \"status\": \"$STATUS\"}" || true
+          fi
+      - name: Close linked issues on successful deployment
+        if: success()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "🔍 Looking for linked issues to close..."
+          
+          # Get the PR that was merged (if this push was from a PR merge)
+          PR_NUMBER=$(gh pr list --state merged --base main --json number,mergeCommit --jq ".[] | select(.mergeCommit.oid == \"${{ github.sha }}\") | .number" 2>/dev/null | head -1 || echo "")
+          
+          if [ -n "$PR_NUMBER" ]; then
+            echo "Found merged PR #$PR_NUMBER"
+            
+            # Get linked issues from the PR body
+            PR_BODY=$(gh pr view $PR_NUMBER --json body -q '.body')
+            
+            # Extract issue numbers from "Fixes #X" or "Closes #X" or "Resolves #X"
+            ISSUE_NUMBERS=$(echo "$PR_BODY" | grep -oE '(Fixes|Closes|Resolves|fixes|closes|resolves) #[0-9]+' | grep -oE '[0-9]+' || echo "")
+            
+            for ISSUE in $ISSUE_NUMBERS; do
+              echo "✅ Closing issue #$ISSUE"
+              gh issue close $ISSUE --comment "✅ Resolved by deployment of PR #$PR_NUMBER (commit ${{ github.sha }})" || true
+            done
+            
+            # Also check if branch name contains incident ID and find matching issue
+            BRANCH_NAME=$(gh pr view $PR_NUMBER --json headRefName -q '.headRefName')
+            if [[ "$BRANCH_NAME" == autosre/incident-* ]]; then
+              INCIDENT_ID=$(echo "$BRANCH_NAME" | sed 's/autosre\/incident-//')
+              echo "Found incident branch: $INCIDENT_ID"
+              
+              # Find issue with this incident ID in title or body
+              MATCHING_ISSUE=$(gh issue list --state open --json number,title,body --jq ".[] | select(.title + .body | contains(\"$INCIDENT_ID\")) | .number" 2>/dev/null | head -1 || echo "")
+              
+              if [ -n "$MATCHING_ISSUE" ]; then
+                echo "✅ Closing incident issue #$MATCHING_ISSUE"
+                gh issue close $MATCHING_ISSUE --comment "✅ Incident resolved by deployment of PR #$PR_NUMBER" || true
+              fi
+            fi
+          else
+            echo "No merged PR found for this commit, skipping issue closure"
           fi
