@@ -195,3 +195,31 @@ jobs:
           else
             echo "No merged PR found for this commit, skipping issue closure"
           fi
+
+      - name: Resolve incident in AutoSRE (updates Slack)
+        if: success()
+        env:
+          AUTOSRE_URL: ${{ secrets.AUTOSRE_WEBHOOK_URL }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "🔍 Looking for incident to resolve in AutoSRE..."
+          
+          PR_NUMBER=$(gh pr list --state merged --base main --json number,mergeCommit --jq ".[] | select(.mergeCommit.oid == \"${{ github.sha }}\") | .number" 2>/dev/null | head -1 || echo "")
+          
+          if [ -n "$PR_NUMBER" ]; then
+            BRANCH_NAME=$(gh pr view $PR_NUMBER --json headRefName -q '.headRefName')
+            
+            if [[ "$BRANCH_NAME" == autosre/incident-* ]]; then
+              INCIDENT_ID=$(echo "$BRANCH_NAME" | sed 's/autosre\/incident-//')
+              echo "Found incident ID: $INCIDENT_ID"
+              
+              if [ -n "$AUTOSRE_URL" ]; then
+                echo "✅ Resolving incident in AutoSRE..."
+                RESOLUTION="Fixed+by+GitOps+PR+%23${PR_NUMBER}+(commit+${{ github.sha }})"
+                curl -s -X POST "${AUTOSRE_URL}/api/v1/incidents/${INCIDENT_ID}/resolve?resolution_summary=${RESOLUTION}&resolved_by=GitOps+CI/CD" \
+                  -H "Content-Type: application/json" || echo "Warning: Could not resolve incident"
+              else
+                echo "⚠️ AUTOSRE_URL not configured"
+              fi
+            fi
+          fi
