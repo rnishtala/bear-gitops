@@ -51,6 +51,17 @@ fraud_detection:
     default_action: "allow"  # or "deny" based on business requirements
 
 # HTTP client configuration
+http_client:
+  inventory_service:
+    connection_timeout_ms: 5000
+    read_timeout_ms: 10000
+    circuit_breaker:
+      enabled: true
+      failure_threshold_percent: 50
+      minimum_requests: 10
+      timeout_duration_ms: 30000
+
+# HTTP client configuration
 http:
   client:
     read_timeout_ms: 30000
