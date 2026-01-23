@@ -37,9 +37,9 @@ payment_provider:
 
 # Fraud detection service configuration
 fraud_detection:
-  timeout_ms: 2500  # Reduced to 2.5s to implement faster fail-fast behavior
-  retry_attempts: 2  # Reduced retry attempts for faster failure
-  connection_timeout_ms: 1000  # Reduced connection timeout for faster failure detection
+  timeout_ms: 2500  # Reduced timeout to implement faster fail-fast behavior
+  retry_attempts: 2  # Reduced retry attempts to fail fast
+  connection_timeout_ms: 1000  # Set faster connection timeout
   connection_pool:
     max_connections: 10
   circuit_breaker:
@@ -76,9 +76,9 @@ http:
     connection_timeout_ms: 10000
     max_connections_per_route: 50
     max_total_connections: 200
-    fraud-detection:
-      read_timeout: 2500ms  # Reduced timeout for faster failure
-      connect_timeout: 1000ms  # Reduced connection timeout
+    fraud_detection:
+      read_timeout: 2500  # Set faster read timeout for fraud detection
+      connect_timeout: 1000  # Set faster connect timeout for fraud detection
 
 # Circuit breaker configuration
 circuit_breaker:
