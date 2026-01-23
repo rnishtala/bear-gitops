@@ -37,18 +37,18 @@ payment_provider:
 
 # Fraud detection service configuration
 fraud_detection:
-  timeout_ms: 2000  # Reduce from default to fail fast
+  timeout_ms: 3000  # Reduced from current timeout for faster failure
   connection_pool:
     max_connections: 10
   circuit_breaker:
     enabled: true
     failure_threshold: 5
     timeout_ms: 10000  # 10 seconds
-    reset_timeout: 60000  # 1 minute
+    reset_timeout: 30000  # Reduced to 30s for faster recovery
   retry:
-    max_attempts: 2
+    max_attempts: 3  # Increased from 2 for better reliability
     backoff_ms: 100
-    backoff_multiplier: 2
+    backoff_multiplier: 1.5  # Reduced from 2 for faster retries
     initial_delay_ms: 100
   fallback:
     enabled: true
@@ -64,6 +64,8 @@ http_client:
       failure_threshold_percent: 50
       minimum_requests: 10
       timeout_duration_ms: 30000
+  fraud_detection:
+    timeout: 3000  # 3 second timeout for fraud detection calls
 
 # HTTP client configuration
 http:
@@ -72,6 +74,20 @@ http:
     connection_timeout_ms: 10000
     max_connections_per_route: 50
     max_total_connections: 200
+    fraud_detection:
+      timeout: 3000  # 3 second timeout for fraud detection service
+
+# Circuit breaker configuration
+circuit_breaker:
+  fraud_detection:
+    failure_threshold: 5
+    recovery_timeout: 30s
+
+# Retry configuration
+retry:
+  fraud_detection:
+    max_attempts: 3
+    backoff_multiplier: 1.5
 
 # Monitoring and logging
 monitoring:
