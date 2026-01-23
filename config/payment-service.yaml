@@ -8,13 +8,13 @@
 
 # Database configuration
 database:
-  connection_pool_size: 2  # Increased from 5 to handle peak payment load and prevent pool exhaustion
+  connection_pool_size: 20  # Increased to handle current load and prevent pool exhaustion
   max_connections: 50
   min_connections: 10
   connection_timeout_ms: 10000  # Increased from 5000 for better connection establishment
   idle_timeout_ms: 300000
   max_lifetime_ms: 1800000
-  query_timeout_ms: 20000  # Increased from 10000 to prevent long-running queries from blocking connections
+  query_timeout_ms: 15000  # Set to 15s as recommended for database query timeout
   retry_attempts: 3
   retry_delay_ms: 1000
 
@@ -26,13 +26,13 @@ service:
 
 # Payment provider configuration
 payment_provider:
-  timeout_ms: 30000  # Increased from 15000 to handle current performance degradation
+  timeout_ms: 30000  # Set to 30s as recommended for payment gateway timeout
   retry_attempts: 3
   retry_delay_ms: 2000
   connection_timeout_ms: 10000  # Maintained connection timeout for gateway
   circuit_breaker:
     failure_threshold: 5
-    recovery_timeout_ms: 30000
+    recovery_timeout_ms: 60000  # Set to 60s as recommended for circuit breaker timeout
     half_open_max_calls: 3
 
 # Fraud detection service configuration
