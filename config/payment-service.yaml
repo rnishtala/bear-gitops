@@ -8,7 +8,7 @@
 
 # Database configuration
 database:
-  connection_pool_size: 20  # Increased from 2 to handle peak payment load and prevent pool exhaustion
+  connection_pool_size: 50  # Increased from 20 to handle peak payment load and prevent pool exhaustion
   max_connections: 50
   min_connections: 10
   connection_timeout_ms: 10000  # Increased from 5000 for better connection establishment
@@ -20,7 +20,7 @@ database:
 
 # Service configuration
 service:
-  timeout_ms: 25000
+  timeout_ms: 30000  # Increased from 25000 for better timeout handling
   version: "1.0.9"
   max_concurrent_requests: 100
 
@@ -64,7 +64,7 @@ http_client:
 # HTTP client configuration
 http:
   client:
-    read_timeout_ms: 30000
+    read_timeout_ms: 25000  # Increased from 30000 to 25s as recommended
     connection_timeout_ms: 10000
     max_connections_per_route: 50
     max_total_connections: 200
