@@ -90,6 +90,10 @@ http:
     connect: 5000  # Increased from default 2000ms
     read: 10000  # Increased from default 5000ms
   client:
+    read-timeout: 30000  # Updated to 30s as recommended
+    connection-timeout: 10000  # Updated to 10s as recommended
+    max-connections-per-route: 50  # Updated to 50 as recommended
+    max-connections-total: 200  # Updated to 200 as recommended
     read_timeout_ms: 25000  # Set to 25s as recommended
     connection_timeout_ms: 5000  # Updated from 10000 as recommended
     max_connections_per_route: 50
