@@ -8,7 +8,7 @@
 
 # Database configuration
 database:
-  connection_pool_size: 2  # Increased from 2 to handle peak payment load and prevent pool exhaustion
+  connection_pool_size: 50  # Increased from 2 to handle peak payment load and prevent pool exhaustion
   max_connections: 50
   min_connections: 10
   connection_timeout_ms: 20000  # Updated from 5000 as recommended for connection establishment
