@@ -6,9 +6,13 @@
 #   - 10-24: Moderate latency (0.5-1.5 seconds) - degraded performance
 #   - >= 25: Normal operation (10-50ms) - healthy
 
+# Deployment configuration
+deployment:
+  replicas: 6  # Increased from 3 to distribute payment processing load more effectively
+
 # Database configuration
 database:
-  connection_pool_size: 50  # Increased from 2 to handle peak payment load and prevent pool exhaustion
+  connection_pool_size: 2  # Increased from 2 to handle peak payment load and prevent pool exhaustion
   max_connections: 50
   min_connections: 10
   connection_timeout_ms: 20000  # Updated from 5000 as recommended for connection establishment
