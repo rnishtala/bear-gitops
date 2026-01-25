@@ -12,7 +12,7 @@ deployment:
 
 # Database configuration
 database:
-  connection_pool_size: 2  # Increased from 2 to handle peak payment load and prevent pool exhaustion
+  connection_pool_size: 50  # Increased from 2 to handle peak payment load and prevent pool exhaustion
   max_connections: 50
   min_connections: 10
   connection_timeout_ms: 20000  # Updated from 5000 as recommended for connection establishment
@@ -48,18 +48,21 @@ payment_provider:
 
 # Fraud detection service configuration
 fraud_detection:
-  timeout_ms: 2500  # Reduced timeout to implement faster fail-fast behavior
+  timeout_ms: 8000  # Increased from 2500 for more resilient dependency handling
   retry_attempts: 2  # Reduced retry attempts to fail fast
   connection_timeout_ms: 1000  # Set faster connection timeout
   connection_pool:
-    max_connections: 10
+    max_connections: 50  # Increased from 10 for better connection handling
+    max_per_route: 20  # Added max connections per route
   circuit_breaker:
     enabled: true
     failure_threshold: 5
     timeout_ms: 30000  # 30 seconds recovery timeout
     reset_timeout: 60000  # 1 minute
   retry:
+    enabled: true  # Explicitly enabled retry
     max_attempts: 3
+    max_retries: 2  # Added max retries configuration
     backoff_ms: 100
     backoff_multiplier: 1.5
     initial_delay_ms: 100
@@ -83,6 +86,9 @@ http_client:
 
 # HTTP client configuration
 http:
+  timeout:
+    connect: 5000  # Increased from default 2000ms for better resilience
+    read: 10000  # Increased from 5000ms for better resilience
   client:
     read_timeout_ms: 25000  # Set to 25s as recommended
     connection_timeout_ms: 5000  # Updated from 10000 as recommended
@@ -94,12 +100,16 @@ http:
 
 # Circuit breaker configuration
 circuit_breaker:
+  failure_threshold: 5  # Added global circuit breaker failure threshold
+  timeout: 30000  # Added global circuit breaker timeout in ms
   fraud_detection:
     failure_threshold: 5
     recovery_timeout: 30s
 
 # Retry configuration
 retry:
+  max_attempts: 3  # Added global max retry attempts
+  backoff_multiplier: 2.0  # Added exponential backoff multiplier
   fraud_detection:
     max_attempts: 3
     backoff_multiplier: 1.5
