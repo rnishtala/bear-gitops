@@ -12,7 +12,7 @@ deployment:
 
 # Database configuration
 database:
-  connection_pool_size: 5  # LOW - will cause high latency to simulate pool exhaustion
+  connection_pool_size: 50  # Increased from 5 to 50 to resolve connection pool exhaustion and reduce latency
   max_connections: 50
   min_connections: 10
   connection_timeout_ms: 20000
