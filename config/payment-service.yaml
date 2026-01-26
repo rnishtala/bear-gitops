@@ -8,67 +8,67 @@
 
 # Deployment configuration
 deployment:
-  replicas: 6  # Increased from 3 to distribute payment processing load more effectively
+  replicas: 6
 
 # Database configuration
 database:
-  connection_pool_size: 50  # Increased from 2 to handle peak payment load and prevent pool exhaustion
+  connection_pool_size: 5  # LOW - will cause high latency to simulate pool exhaustion
   max_connections: 50
   min_connections: 10
-  connection_timeout_ms: 20000  # Updated from 5000 as recommended for connection establishment
+  connection_timeout_ms: 20000
   idle_timeout_ms: 300000
   max_lifetime_ms: 1800000
-  query_timeout_ms: 15000  # Set to 15s as recommended for database query timeout
+  query_timeout_ms: 15000
   retry_attempts: 3
   retry_delay_ms: 1000
-  core_pool_size: 20  # Added core pool size as recommended
-  max_pool_size: 50  # Added max pool size as recommended
-  keep_alive_time_ms: 60000  # Added keep alive time as recommended
+  core_pool_size: 20
+  max_pool_size: 50
+  keep_alive_time_ms: 60000
 
 # Service configuration
 service:
-  timeout_ms: 30000  # Maintained at 30s as recommended
-  request_timeout_ms: 30000  # Added request timeout as recommended
-  read_timeout_ms: 25000  # Added read timeout as recommended
-  version: "1.0.9"
+  timeout_ms: 30000
+  request_timeout_ms: 30000
+  read_timeout_ms: 25000
+  version: "1.0.10"
   max_concurrent_requests: 100
   tomcat:
-    connection_timeout: 30000  # Added server connection timeout
+    connection_timeout: 30000
 
 # Payment provider configuration
 payment_provider:
-  timeout_ms: 15000  # Updated to 15s as recommended for payment gateway timeout
+  timeout_ms: 15000
   retry_attempts: 3
   retry_delay_ms: 2000
-  connection_timeout_ms: 5000  # Updated from 10000 as recommended for gateway
+  connection_timeout_ms: 5000
   circuit_breaker:
     failure_threshold: 5
-    recovery_timeout_ms: 60000  # Set to 60s as recommended for circuit breaker timeout
+    recovery_timeout_ms: 60000
     half_open_max_calls: 3
 
 # Fraud detection service configuration
 fraud_detection:
-  timeout_ms: 8000  # Increased timeout for better resilience
-  retry_attempts: 2  # Reduced retry attempts to fail fast
-  connection_timeout_ms: 1000  # Set faster connection timeout
+  timeout_ms: 8000
+  retry_attempts: 2
+  connection_timeout_ms: 1000
   connection_pool:
-    max_connections: 50  # Increased from 10 for better throughput
-    max_per_route: 20  # Added max connections per route
+    max_connections: 50
+    max_per_route: 20
   circuit_breaker:
     enabled: true
     failure_threshold: 5
-    timeout_ms: 30000  # 30 seconds recovery timeout
-    reset_timeout: 60000  # 1 minute
+    timeout_ms: 30000
+    reset_timeout: 60000
   retry:
-    enabled: true  # Explicitly enabled retry
+    enabled: true
     max_attempts: 3
-    max_retries: 2  # Added max retries configuration
+    max_retries: 2
     backoff_ms: 100
     backoff_multiplier: 1.5
     initial_delay_ms: 100
   fallback:
     enabled: true
-    default_action: "allow"  # or "deny" based on business requirements
+    default_action: "allow"
 
 # HTTP client configuration
 http_client:
@@ -81,39 +81,39 @@ http_client:
       minimum_requests: 10
       timeout_duration_ms: 30000
   fraud_detection:
-    timeout: 3000  # 3 second timeout for fraud detection service
-  response_timeout: 30000  # Added HTTP client response timeout
+    timeout: 3000
+  response_timeout: 30000
 
-# HTTP client configuration
+# HTTP configuration
 http:
   timeout:
-    connect: 5000  # Increased from default 2000ms
-    read: 10000  # Increased from default 5000ms
+    connect: 5000
+    read: 10000
   client:
-    read-timeout: 30000  # Updated to 30s as recommended
-    connection-timeout: 10000  # Updated to 10s as recommended
-    max-connections-per-route: 50  # Updated to 50 as recommended
-    max-connections-total: 200  # Updated to 200 as recommended
-    read_timeout_ms: 25000  # Set to 25s as recommended
-    connection_timeout_ms: 5000  # Updated from 10000 as recommended
+    read-timeout: 30000
+    connection-timeout: 10000
+    max-connections-per-route: 50
+    max-connections-total: 200
+    read_timeout_ms: 25000
+    connection_timeout_ms: 5000
     max_connections_per_route: 50
     max_total_connections: 200
     fraud_detection:
-      read_timeout: 2500  # Set faster read timeout for fraud detection
-      connect_timeout: 1000  # Set faster connect timeout for fraud detection
+      read_timeout: 2500
+      connect_timeout: 1000
 
 # Circuit breaker configuration
 circuit_breaker:
-  failure_threshold: 5  # Global circuit breaker failure threshold
-  timeout: 30000  # Global circuit breaker timeout in ms
+  failure_threshold: 5
+  timeout: 30000
   fraud_detection:
     failure_threshold: 5
     recovery_timeout: 30s
 
 # Retry configuration
 retry:
-  max_attempts: 3  # Global max retry attempts
-  backoff_multiplier: 2.0  # Exponential backoff multiplier
+  max_attempts: 3
+  backoff_multiplier: 2.0
   fraud_detection:
     max_attempts: 3
     backoff_multiplier: 1.5
