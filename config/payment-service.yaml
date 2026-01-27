@@ -12,10 +12,10 @@ deployment:
 
 # Database configuration
 database:
-  connection_pool_size: 5  # LOW - simulates connection pool exhaustion
+  connection_pool_size: 20  # INCREASED - from 5 to 20 to reduce connection pool exhaustion
   max_connections: 50
   min_connections: 10
-  connection_timeout_ms: 20000
+  connection_timeout_ms: 30000  # INCREASED - from 20000 to 30000 (30s)
   idle_timeout_ms: 300000
   max_lifetime_ms: 1800000
   query_timeout_ms: 15000
@@ -91,15 +91,15 @@ http:
     read: 10000
   client:
     read-timeout: 30000
-    connection-timeout: 10000
+    connection-timeout: 15000  # INCREASED - from 10000 to 15000 (15s)
     max-connections-per-route: 50
     max-connections-total: 200
     read_timeout_ms: 25000
-    connection_timeout_ms: 5000
+    connection_timeout_ms: 15000  # INCREASED - from 5000 to 15000 (15s)
     max_connections_per_route: 50
     max_total_connections: 200
     fraud_detection:
-      read_timeout: 2500
+      read_timeout: 10000  # INCREASED - from 2500 to 10000 (10s)
       connect_timeout: 1000
 
 # Circuit breaker configuration
