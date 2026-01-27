@@ -12,10 +12,10 @@ deployment:
 
 # Database configuration
 database:
-  connection_pool_size: 20  # Increased from 5 to handle higher load
+  connection_pool_size: 5  # LOW - triggers 35x latency for demo
   max_connections: 50
   min_connections: 10
-  connection_timeout_ms: 30000  # Increased from 20000
+  connection_timeout_ms: 20000
   idle_timeout_ms: 300000
   max_lifetime_ms: 1800000
   query_timeout_ms: 15000
@@ -30,114 +30,5 @@ service:
   timeout_ms: 30000
   request_timeout_ms: 30000
   read_timeout_ms: 25000
-  version: "1.0.10"
+  version: "1.0.11"
   max_concurrent_requests: 100
-  tomcat:
-    connection_timeout: 30000
-
-# Payment provider configuration
-payment_provider:
-  timeout_ms: 15000
-  retry_attempts: 3
-  retry_delay_ms: 2000
-  connection_timeout_ms: 5000
-  circuit_breaker:
-    failure_threshold: 5
-    recovery_timeout_ms: 60000
-    half_open_max_calls: 3
-
-# Fraud detection service configuration
-fraud_detection:
-  timeout_ms: 8000
-  retry_attempts: 2
-  connection_timeout_ms: 1000
-  connection_pool:
-    max_connections: 50
-    max_per_route: 20
-  circuit_breaker:
-    enabled: true
-    failure_threshold: 5
-    timeout_ms: 30000
-    reset_timeout: 60000
-  retry:
-    enabled: true
-    max_attempts: 3
-    max_retries: 2
-    backoff_ms: 100
-    backoff_multiplier: 1.5
-    initial_delay_ms: 100
-  fallback:
-    enabled: true
-    default_action: "allow"
-
-# HTTP client configuration
-http_client:
-  inventory_service:
-    connection_timeout_ms: 5000
-    read_timeout_ms: 10000
-    circuit_breaker:
-      enabled: true
-      failure_threshold_percent: 50
-      minimum_requests: 10
-      timeout_duration_ms: 30000
-  fraud_detection:
-    timeout: 3000
-  response_timeout: 30000
-
-# HTTP configuration
-http:
-  timeout:
-    connect: 5000
-    read: 10000
-  client:
-    read-timeout: 30000
-    connection-timeout: 15000  # Increased from 10000
-    max-connections-per-route: 50
-    max-connections-total: 200
-    read_timeout_ms: 25000
-    connection_timeout_ms: 15000  # Increased from 5000
-    max_connections_per_route: 50
-    max_total_connections: 200
-    fraud_detection:
-      read_timeout: 10000  # Increased from 2500
-      connect_timeout: 1000
-
-# Circuit breaker configuration
-circuit_breaker:
-  failure_threshold: 5
-  timeout: 30000
-  fraud_detection:
-    failure_threshold: 5
-    recovery_timeout: 30s
-
-# Retry configuration
-retry:
-  max_attempts: 3
-  backoff_multiplier: 2.0
-  fraud_detection:
-    max_attempts: 3
-    backoff_multiplier: 1.5
-
-# Monitoring and logging
-monitoring:
-  metrics_enabled: true
-  tracing_enabled: true
-  log_level: "INFO"
-  slow_query_threshold_ms: 1000
-  performance_monitoring:
-    enabled: true
-    alert_threshold_ms: 2000
-
-# Cache configuration
-cache:
-  enabled: true
-  ttl_seconds: 300
-  max_size: 10000
-  eviction_policy: "LRU"
-
-# Error handling
-error_handling:
-  timeout_message: "Payment processing timeout - please try again"
-  generic_error_message: "Payment processing temporarily unavailable"
-  detailed_logging: true
-  alert_on_errors: true
