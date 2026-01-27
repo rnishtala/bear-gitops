@@ -12,23 +12,32 @@ deployment:
 
 # Database configuration
 database:
-  connection_pool_size: 5  # LOW - triggers 35x latency for demo
-  max_connections: 50
+  connection_pool_size: 50  # INCREASED - fixed from 5 to resolve latency issues
+  max_connections: 100  # INCREASED - expanded connection pool capacity
   min_connections: 10
-  connection_timeout_ms: 20000
+  connection_timeout_ms: 10000  # REDUCED - faster connection timeout
   idle_timeout_ms: 300000
   max_lifetime_ms: 1800000
   query_timeout_ms: 15000
   retry_attempts: 3
   retry_delay_ms: 1000
   core_pool_size: 20
-  max_pool_size: 50
+  max_pool_size: 100  # INCREASED - expanded max pool size
   keep_alive_time_ms: 60000
 
 # Service configuration
 service:
   timeout_ms: 30000
   request_timeout_ms: 30000
-  read_timeout_ms: 25000
+  read_timeout_ms: 30000  # INCREASED - expanded read timeout for payment processing
   version: "1.0.11"
   max_concurrent_requests: 100
+
+# HTTP client configuration
+http:
+  client:
+    read_timeout: 30000
+    connection_timeout: 10000
+    pool:
+      max_connections: 100
+      max_connections_per_route: 20
