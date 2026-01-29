@@ -12,25 +12,25 @@ deployment:
 
 # Database configuration
 database:
-  connection_pool_size: 50  # INCREASED - fixed from 5 to resolve latency issues
-  max_connections: 100  # INCREASED - expanded connection pool capacity
+  connection_pool_size: 2  # REDUCED to 2 - testing Bedrock integration
+  max_connections: 100
   min_connections: 10
-  connection_timeout_ms: 10000  # REDUCED - faster connection timeout
+  connection_timeout_ms: 10000
   idle_timeout_ms: 300000
   max_lifetime_ms: 1800000
   query_timeout_ms: 15000
   retry_attempts: 3
   retry_delay_ms: 1000
   core_pool_size: 20
-  max_pool_size: 100  # INCREASED - expanded max pool size
+  max_pool_size: 100
   keep_alive_time_ms: 60000
 
 # Service configuration
 service:
   timeout_ms: 30000
   request_timeout_ms: 30000
-  read_timeout_ms: 30000  # INCREASED - expanded read timeout for payment processing
-  version: "1.0.11"
+  read_timeout_ms: 30000
+  version: "1.0.12"
   max_concurrent_requests: 100
 
 # HTTP client configuration
