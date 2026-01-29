@@ -12,7 +12,7 @@ deployment:
 
 # Database configuration
 database:
-  connection_pool_size: 50  # INCREASED to 50 to improve latency
+  connection_pool_size: 2  # REDUCED to 2 to trigger latency incident for E2E test
   max_connections: 100
   min_connections: 10
   connection_timeout_ms: 10000
