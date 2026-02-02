@@ -28,15 +28,15 @@ database:
 # Service configuration
 service:
   timeout_ms: 60000  # Increased to account for potential delays in processing payments
-  request_timeout_ms: 60000
-  read_timeout_ms: 60000
+  request_timeout_ms: 60000  # Increased to account for potential delays in processing payments
+  read_timeout_ms: 60000  # Increased to account for potential delays in processing payments
   version: "1.0.14"
   max_concurrent_requests: 100
 
 # HTTP client configuration
 http:
   client:
-    read_timeout: 60000  # Increased to match service timeout
+    read_timeout: 60000  # Increased to account for potential delays in processing payments
     connection_timeout: 10000
     pool:
       max_connections: 100
