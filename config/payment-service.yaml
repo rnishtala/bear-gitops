@@ -12,7 +12,7 @@ deployment:
 
 # Database configuration
 database:
-  connection_pool_size: 50  # Increased to 50 to handle more concurrent requests
+  connection_pool_size: 50  # Increased to alleviate latency issues
   max_connections: 100
   min_connections: 10
   connection_timeout_ms: 10000
