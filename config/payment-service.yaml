@@ -12,7 +12,7 @@ deployment:
 
 # Database configuration
 database:
-  connection_pool_size: 25  # Increased to mitigate latency issues
+  connection_pool_size: 2  # REDUCED to 2 to trigger latency incident for E2E test
   max_connections: 100
   min_connections: 10
   connection_timeout_ms: 10000
@@ -27,16 +27,16 @@ database:
 
 # Service configuration
 service:
-  timeout_ms: 60000  # Increased to account for potential delays in processing payments
-  request_timeout_ms: 60000
-  read_timeout_ms: 60000
+  timeout_ms: 30000
+  request_timeout_ms: 30000
+  read_timeout_ms: 30000
   version: "1.0.14"
   max_concurrent_requests: 100
 
 # HTTP client configuration
 http:
   client:
-    read_timeout: 60000  # Increased to account for potential delays in processing payments
+    read_timeout: 30000
     connection_timeout: 10000
     pool:
       max_connections: 100
